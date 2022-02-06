@@ -101,7 +101,7 @@ function initPhysicalKeyboard() {
 
     document.addEventListener('keydown', function (e) {
 
-        if (!gameRunning)
+        if (!gameRunning && e.code != 'Escape')
             return
 
         if (e.code == 'Enter' || e.code == 'Space')
@@ -213,6 +213,8 @@ function startGame() {
     initKeyboard()
 
     word = words[Math.floor(Math.random() * words.length)].toUpperCase()
+    currentCol = 0
+    currentRow = 0
     setCursor(0, 0)
     
     gameRunning = true;
@@ -235,7 +237,11 @@ function submitWord() {
     }
 
     writeTileRow(currentRow, guess, word)
-    setCursor(currentRow+1, 0)
+
+    if (currentRow+1 == maxTries)
+        gameRunning = false
+    else
+        setCursor(currentRow+1, 0)
 }
 
 function setCursor(row, col) {
