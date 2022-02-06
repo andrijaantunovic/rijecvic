@@ -238,14 +238,20 @@ function submitWord() {
 
     writeTileRow(currentRow, guess, word)
 
-    if (currentRow+1 == maxTries)
-        gameRunning = false
-    else
-        setCursor(currentRow+1, 0)
+    setCursor(currentRow+1, 0)
 }
 
 function setCursor(row, col) {
+
     getTile(currentRow, currentCol).classList.remove('current')
+    
+    if (row >= maxTries) {
+        gameRunning = false
+        currentCol = 0
+        currentRow = 0
+        return
+    }
+    
     currentRow = row
     currentCol = col
     getTile(currentRow, currentCol).classList.add('current')
