@@ -28,7 +28,6 @@ function asciify(string) {
 
 function initKeyboard() {
     const keys = ['<ERTZUIOPŠĐ', 'ASDFGHJKLČĆŽ', ' ǄCVBNMǇǊ>']
-    //const keys = ['ABCDEFGHIJ', 'KLMNOPQRST', '<UVWXYZ>']
     
     let keyboard = document.getElementById('keyboard')
     keyboard.innerHTML = ''
@@ -135,8 +134,11 @@ function clicktypeLetter(letter) {
     console.log('clicked or typed ' + letter + '   (asciified: ' + asciify(letter) + '), possibleKeyboardDigraph:'+possibleKeyboardDigraph)
 
     if (possibleKeyboardDigraph && currentCol >= 1 && (letter == 'J' || letter == 'Ž')) {
-        const lastColWritten = currentCol == wordLength-1 && getTile(currentRow, currentCol).dataset.letter !== undefined && getTile(currentRow, currentCol).dataset.letter != ''
+        
+        // TODO: doesn't work when trying to type digraph into second-to-last column if the last column already has a letter
 
+        const lastColWritten = currentCol == wordLength-1 && getTile(currentRow, currentCol).dataset.letter !== undefined && getTile(currentRow, currentCol).dataset.letter != ''
+        
         const prevLetter = getTile(currentRow, lastColWritten? currentCol : currentCol-1).dataset.letter
 
         if (prevLetter == 'D' && letter == 'Ž') {
@@ -218,7 +220,7 @@ function submitWord() {
     }
 
     if (!dictionary.includes(guess)) {
-        alert('Riječ ne postoji u riječniku!')
+        alert('Riječ ne postoji u rječniku!')
         return
     }
 
@@ -226,10 +228,10 @@ function submitWord() {
 
     if (result == 'win') {
         gameRunning = false
-        alert(`Bravo, pogodili ste riječ u ${currentRow+1}. pokušaju!`)
+        alert(`Bravo, pogodili ste riječ u ${currentRow+1}. pokušaju!`) //TODO: 🟩🟨⬛
     } else if (result == 'lost') {
         gameRunning = false
-        alert(`Niste pogodili riječ u ${maxTries} pokušaja.`)
+        alert(`Niste pogodili riječ u ${maxTries} pokušaja. Tražena riječ bila je ${word}.`)
     }
 
     setCursor(currentRow+1, 0)
