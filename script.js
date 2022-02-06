@@ -244,7 +244,15 @@ function submitWord() {
         guess += letter
     }
 
-    writeTileRow(currentRow, guess, word)
+    const result = writeTileRow(currentRow, guess, word)
+
+    if (result == 'win') {
+        gameRunning = false
+        alert(`Bravo, pogodili ste riječ u ${currentRow+1}. pokušaju!`)
+    } else if (result == 'lost') {
+        gameRunning = false
+        alert(`Niste pogodili riječ u ${maxTries} pokušaja.`)
+    }
 
     setCursor(currentRow+1, 0)
 }
@@ -320,6 +328,12 @@ function writeTileRow(row, string, correctString) {
         }
     }
 
+    if (correctString.every(char => char == '!'))
+        return 'win'
+    else if (row == maxTries-1)
+        return 'lost'
+    else
+        return 'continue'
 }
 
 const words = [
