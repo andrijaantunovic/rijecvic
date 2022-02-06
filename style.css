@@ -42,6 +42,7 @@ button {
     font-size: var(--key-font-size);
     /* font-family: "DejaVu Sans", sans-serif; */
     border: none;
+    padding: 0;
 }
 
 .delete-key, .enter-key {
