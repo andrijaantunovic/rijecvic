@@ -120,17 +120,25 @@ function initPhysicalKeyboard() {
 
 function initBoard() {
 
-    let board = ''
+    let board = document.getElementById('board')
+    board.innerHTML = ''
 
     for (let row = 0; row < maxTries; row++) {
-        board += '<div class="tile-row">'
-        for (let t = 0; t < wordLength; t++) {
-            board += '<div class="tile"></div>'
-        }
-        board += '</div>'
-    }
 
-    document.getElementById('board').innerHTML = board
+        let tileRow = document.createElement('div')
+        tileRow.classList.add('tile-row')
+
+        for (let t = 0; t < wordLength; t++) {
+            let tile = document.createElement('div')
+            tile.classList.add('tile')
+            tile.addEventListener('click', function() {
+                if (gameRunning && row == currentRow)
+                    setCursor(row, t)
+            })
+            tileRow.appendChild(tile)
+        }
+        board.appendChild(tileRow)
+    }
 }
 
 function testBoard() {
