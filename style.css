@@ -15,6 +15,15 @@ button {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+button#new {
+    position: absolute;
+    right: 2vmin;
+    margin: var(--tile-margin);
+    font-size: calc(var(--key-font-size)*0.6);
+    height: var(--tile-size);
+    width: var(--tile-size);
+}
+
 #keyboard {
     /* border: 1px solid gray; */
     padding-top: 1vmin;
@@ -26,7 +35,7 @@ button {
     justify-content: center;
 }
 
-#keyboard > .row > .key {
+button {
     margin: var(--key-margin);
     width: var(--key-size);
     height: var(--key-size);

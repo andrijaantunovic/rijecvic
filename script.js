@@ -1,9 +1,10 @@
 document.addEventListener('DOMContentLoaded', function () {
 
-    initKeyboard()
     initPhysicalKeyboard()
-    initBoard()
+
     startGame()
+
+    document.getElementById('new').addEventListener('click', () => startGame())
 
 }, false)
 
@@ -39,8 +40,8 @@ function initKeyboard() {
     const keys = ['<ERTZUIOPŠĐ', 'ASDFGHJKLČĆŽ', ' ǄCVBNMǇǊ>']
     //const keys = ['ABCDEFGHIJ', 'KLMNOPQRST', '<UVWXYZ>']
     
-    let keyboard = document.createElement('div')
-    keyboard.id = 'keyboard'
+    let keyboard = document.getElementById('keyboard')
+    keyboard.innerHTML = ''
 
     keys.forEach(r => {
         
@@ -82,7 +83,6 @@ function initKeyboard() {
         keyboard.appendChild(row)
     });
 
-    document.body.appendChild(keyboard)
 }
 
 function initPhysicalKeyboard() {
@@ -96,7 +96,7 @@ function initPhysicalKeyboard() {
         'Backspace': 'delete', 'Enter': 'enter',
         'Digit1': 'focus1', 'Digit2': 'focus2', 'Digit3': 'focus3', 'Digit4': 'focus4', 'Digit5': 'focus5',
         'Digit6': 'focus6', 'Digit7': 'focus7', 'Digit8': 'focus8', 'Digit9': 'focus9', 'Digit0': 'focus10',
-        'ArrowLeft': 'moveLeft', 'ArrowRight': 'moveRight', 'Home': 'home', 'End': 'end'
+        'ArrowLeft': 'moveLeft', 'ArrowRight': 'moveRight', 'Home': 'home', 'End': 'end', 'Escape': 'new'
     }
 
     document.addEventListener('keydown', function (e) {
@@ -199,14 +199,22 @@ function clicktypeSpecial(what) {
         setCursor(currentRow, 0)
     } else if (what == 'end') {
         setCursor(currentRow, wordLength-1)
-    } else if (what == 'enter')
+    } else if (what == 'enter') {
         submitWord()
+    } else if (what == 'new') {
+        startGame()
+    }
+        
 }
 
 function startGame() {
 
+    initBoard()
+    initKeyboard()
+
     word = words[Math.floor(Math.random() * words.length)].toUpperCase()
     setCursor(0, 0)
+    
     gameRunning = true;
 
 }
