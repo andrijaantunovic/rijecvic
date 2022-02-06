@@ -131,7 +131,11 @@ function initBoard() {
 }
 
 function clicktypeLetter(letter) {
+
     console.log('clicked or typed ' + letter + '   (asciified: ' + asciify(letter) + '), possibleKeyboardDigraph:'+possibleKeyboardDigraph)
+
+    if (!gameRunning)
+        return
 
     if (possibleKeyboardDigraph && currentCol >= 1 && (letter == 'J' || letter == 'Ž')) {
         
@@ -167,6 +171,14 @@ function clicktypeLetter(letter) {
 function clicktypeSpecial(what) {
     console.log('clicked or typed ' + what)
 
+    if (what == 'new') {
+        startGame()
+        return
+    }
+
+    if (!gameRunning)
+        return
+
     if (what == 'delete') {
         if (currentCol > 0 && currentCol <= wordLength-1 && getTile(currentRow, currentCol).dataset.letter == '')
             setCursor(currentRow, currentCol-1) 
@@ -184,8 +196,6 @@ function clicktypeSpecial(what) {
         setCursor(currentRow, wordLength-1)
     } else if (what == 'enter') {
         submitWord()
-    } else if (what == 'new') {
-        startGame()
     }
         
 }
