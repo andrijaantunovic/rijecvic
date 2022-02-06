@@ -44,8 +44,7 @@ button {
     border: none;
 }
 
-#keyboard > .row > .delete-key,
-#keyboard > .row > .enter-key {
+.delete-key, .enter-key {
     width: calc(var(--key-size) * 2 + var(--key-margin)*2);
     font-size: calc(var(--key-font-size) * 0.8);
 }
@@ -95,16 +94,27 @@ button[data-color="gray"] {
 @media (max-aspect-ratio: 0.9) {
     button {
         height: calc(var(--key-size)*1.5);
+        font-size: calc(var(--key-font-size)*1.15);
+    }
+    .delete-key, .enter-key {
+        font-size: calc(var(--key-font-size) * 0.8*1.15);
     }
     .tile {
         width: calc(var(--tile-size)*1.05);
         height: calc(var(--tile-size)*1.05);
         margin: calc(var(--tile-margin)*1.05);
     }
+    button#new {
+        font-size: calc(var(--key-font-size)*0.6*1.05);
+    }
 }
 @media (max-aspect-ratio: 0.75) {
     button {
         height: calc(var(--key-size)*2);
+        font-size: calc(var(--key-font-size)*1.35);
+    }
+    .delete-key, .enter-key {
+        font-size: calc(var(--key-font-size) * 0.8*1.35);
     }
     .tile, button#new {
         width: calc(var(--tile-size)*1.2);
