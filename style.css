@@ -1,0 +1,84 @@
+:root {
+    --key-size: 7.5vmin;
+    --key-margin: 0.25vmin;
+    --key-font-size: 3.5vmin;
+    --tile-size: 9vmin;
+    --tile-margin: 0.5vmin;
+    --tile-font-size: 5.8vmin;
+}
+
+body {
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+}
+
+button {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+#keyboard {
+    /* border: 1px solid gray; */
+    padding-top: 1vmin;
+    padding-bottom: 1vmin;
+}
+
+#keyboard > .row {
+    display: flex;
+    justify-content: center;
+}
+
+#keyboard > .row > .key {
+    margin: var(--key-margin);
+    width: var(--key-size);
+    height: var(--key-size);
+    font-size: var(--key-font-size);
+    /* font-family: "DejaVu Sans", sans-serif; */
+    border: none;
+}
+
+#keyboard > .row > .delete-key,
+#keyboard > .row > .enter-key {
+    width: calc(var(--key-size) * 2 + var(--key-margin)*2);
+    font-size: calc(var(--key-font-size) * 0.8);
+}
+
+#board {
+    margin-top: 3vmin;
+    margin-bottom: 3vmin;
+}
+
+.tile-row {
+    display: flex;
+    justify-content: center;
+}
+
+.tile {
+    width: var(--tile-size);
+    height: var(--tile-size);
+    margin: var(--tile-margin);
+    background-color: rgb(37, 37, 37);
+    font-size: var(--tile-font-size);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+[data-color="unused"] {
+    background-color: rgb(57, 60, 61);
+}
+[data-color="gray"] {
+    background-color: rgb(43, 36, 49);
+}
+button[data-color="gray"] {
+    color:rgb(136, 114, 156);
+}
+[data-color="yellow"] {
+    background-color: rgb(128, 108, 43);
+}
+[data-color="green"] {
+    background-color: rgb(39, 134, 39);
+}
+
+.tile.current {
+    background-color: rgb(53, 53, 53);
+    box-shadow: rgb(182, 182, 182) 0 0 0 var(--tile-margin);
+}
