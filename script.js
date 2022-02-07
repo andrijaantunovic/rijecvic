@@ -64,6 +64,8 @@ function initKeyboard() {
                 key.innerHTML = asciify(letter)
                 if (letter != ' ')
                     key.addEventListener('click', () => clicktypeLetter(letter))
+                else
+                    key.style.visibility = 'hidden'
                 key.dataset.color = 'unused'
                 row.appendChild(key)
             }
@@ -210,6 +212,8 @@ function startGame() {
     currentRow = 0
     setCursor(0, 0)
     
+    displayMessage('Započeta nova igra', 'unused', '1000')
+
     gameRunning = true;
 
 }
@@ -222,7 +226,7 @@ function submitWord() {
         const tile = getTile(currentRow, c);
         const letter = tile.dataset.letter;
         if (letter === undefined || letter == '') {
-            //alert('Upišite cijelu riječ!')
+            displayMessage('Upišite cijelu riječ!', 'yellow', 2000)
             return
         }
 
@@ -230,7 +234,7 @@ function submitWord() {
     }
 
     if (!dictionary.includes(guess)) {
-        alert('Riječ ne postoji u rječniku!')
+        displayMessage(`Riječ ${asciify(guess)} ne postoji u rječniku!`, 'yellow', 2500)
         return
     }
 
@@ -238,10 +242,10 @@ function submitWord() {
 
     if (result == 'win') {
         gameRunning = false
-        alert(`Bravo, pogodili ste riječ u ${currentRow+1}. pokušaju!`) //TODO: 🟩🟨⬛
+        displayMessage(`Bravo, pogodili ste riječ u ${currentRow+1}. pokušaju!`, 'green') //TODO: 🟩🟨⬛
     } else if (result == 'lost') {
         gameRunning = false
-        alert(`Niste pogodili riječ u ${maxTries} pokušaja. Tražena riječ bila je ${word}.`)
+        displayMessage(`Niste pogodili riječ u ${maxTries} pokušaja. Tražena riječ bila je ${asciify(word)}.`, 'yellow')
     }
 
     setCursor(currentRow+1, 0)
@@ -324,4 +328,21 @@ function writeTileRow(row, string, correctString) {
         return 'lost'
     else
         return 'continue'
+}
+
+let timerId
+
+function displayMessage(message, color, timeout) {
+    clearTimeout(timerId)
+
+    document.getElementById('message').innerText = message
+    document.getElementById('message-container').dataset.color = color
+
+    if (timeout)
+        timerId = setTimeout(hideMessage, timeout)
+}
+
+function hideMessage() {
+    document.getElementById('message').innerText = ''
+    delete document.getElementById('message-container').dataset.color
 }

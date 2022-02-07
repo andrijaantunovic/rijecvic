@@ -2,16 +2,18 @@
     --key-size: 7.5vmin;
     --key-margin: 0.25vmin;
     --key-font-size: 3.5vmin;
+    --newgame-key-font-size: 2vmin;
     --tile-size: 9vmin;
     --tile-margin: 0.5vmin;
     --tile-font-size: 5.8vmin;
+    --message-font-size: 2.5vmin;
 }
 
 body {
     font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
 }
 
-button {
+button, #message {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -19,9 +21,22 @@ button#new {
     position: absolute;
     right: 2vmin;
     margin: var(--tile-margin);
-    font-size: calc(var(--key-font-size)*0.6);
+    font-size: var(--newgame-key-font-size);
     height: var(--tile-size);
     width: var(--tile-size);
+}
+
+#message-container {
+    height: 6vmin;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1vmin;
+}
+
+#message {
+    font-size: var(--message-font-size);
+    text-align: center;
 }
 
 #keyboard {
@@ -52,7 +67,7 @@ button {
 
 #board {
     margin-top: 3vmin;
-    margin-bottom: 3vmin;
+    margin-bottom: 2vmin;
 }
 
 .tile-row {
@@ -106,7 +121,7 @@ button[data-color="gray"] {
         margin: calc(var(--tile-margin)*1.05);
     }
     button#new {
-        font-size: calc(var(--key-font-size)*0.6*1.05);
+        font-size: calc(var(--newgame-key-font-size)*1.05);
     }
 }
 @media (max-aspect-ratio: 75/100) {
@@ -126,7 +141,7 @@ button[data-color="gray"] {
         font-size: calc(var(--tile-font-size)*1.2);
     }
     button#new {
-        font-size: calc(var(--key-font-size)*0.6*1.2);
+        font-size: calc(var(--newgame-key-font-size)*1.2);
     }
 }
 @media (max-aspect-ratio: 65/100) {
@@ -139,6 +154,6 @@ button[data-color="gray"] {
         font-size: calc(var(--tile-font-size)*1.3);
     }
     button#new {
-        font-size: calc(var(--key-font-size)*0.6*1.3);
+        font-size: calc(var(--newgame-key-font-size)*1.3);
     }
 }
