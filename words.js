@@ -18,7 +18,7 @@ const words = [
     'čudno','napon','čagaǉ','vosak','ležaj','perla','bačen','pegla','himna','glava','vijak','krčma','ćufta','snaga','oruđe','dosje','mazga','sedlo','svađa','zaton',
     'skala','gǌida','oraǌe','fjaka','kifla','bakǉa','kokot','žvaka','kopno','strop','otpor','bubaǌ','gusto','pazuh','zraka','tkivo','smola','fazan','brkat','guava',
     'trakt','lokot','novac','stvor','žiteǉ','bunda','krmak','staza','imaǌe','majka','human','staja','globa','relej','ǆezva','važno','gruda','rubaǉ','čorba','pruga',
-    'tkiva','paǉba','pržen','krema','popis','birač','pučko','arhiv','štala','gesta','šaǉiv','biǉar','braća','vrhǌe','sloga','dogma','ulica','škola','bojna','pupak',
+    'ratar','paǉba','pržen','krema','popis','birač','pučko','arhiv','štala','gesta','šaǉiv','biǉar','braća','vrhǌe','sloga','dogma','ulica','škola','bojna','pupak',
     'sunce','minus','kupon','šaraf','bitka','ǌežno','duplo','rašpa','sfera','češer','aorta','kvaka','bačva','horda','naboj','šaman','češaǉ','benǆo','borac','runda',
     'braǌe','sklad','patka','perad','veslo','osoba','pedaǉ','delta','menza','oblik','pilon','vrpca','uspon','staro','rubac','jesen','lažov','fešta','sitno','horor',
     'truba','arsen','breme','žemǉa','ormar','žrtva','marža','kvota','geslo','magla','start','kobno','vožǌa','saldo','šǉiva','tegla','tužba','sarma','trska','gulag',
