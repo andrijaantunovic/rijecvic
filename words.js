@@ -1,4 +1,4 @@
-const words = [
+const challengeWords = [
     'mrtvo','nalet','peron','bedem','nizak','šturo','kupac','jahač','žalba','deblo','češaǌ','uloga','šlapa','mržǌa','heǉda','kleme','upala','karta','raǌiv','alkar',
     'sabor','uzvik','višak','točno','blato','palac','doček','konac','kopar','treǌe','gudač','hrana','zajam','bijeg','berba','lažan','lutka','visok','pozor','brkǉa',
     'sidro','samrt','hrčak','pomoć','mučno','marva','vedro','voden','zidar','mulac','nikal','šunka','žetva','torba','rukav','izlet','bakar','voćka','obuka','tekst',
@@ -1022,3 +1022,4 @@ const dictionary = [
     'žurim','žurio','žuriš','žurit','žurna','žurno','žutih','žutim','žutog','žutom','žutoj','žužul','žvaka','žvake','žvaku','žvače','žvači','žvaču','žvale','žvala',
     'žvale','žvali','cijel','darak','darci','darče','denar','frend','front','gulag','haiku','jurta','jurte','jurti','jurto','jurtu','kečka','kečki','kečko','kečku',
     'koala','koale','koali','koalo','koalu','kroše','kulak','šturo','mulac','limbo','ofrǉe','ćufta'].map(word => word.toUpperCase());
+    

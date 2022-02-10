@@ -1,20 +1,19 @@
 const maxTries = 6
 const wordLength = 5
-let gameRunning = false
-let word
+let running = false
+let challengeWord
 let currentRow
 let currentCol
-let possibleKeyboardDigraph = false
+let lastColumnIfLastActionWasTypeLetterElseUndefined
+
 
 document.addEventListener('DOMContentLoaded', function () {
 
-    initPhysicalKeyboard()
-
-    startGame()
-
     document.getElementById('new').addEventListener('click', () => startGame())
-
+    initPhysicalKeyboard()
+    startGame()
 }, false)
+
 
 function asciify(string) {
     const replacements = { 'Ǉ':'LJ', 'Ǌ':'NJ', 'Ǆ':'DŽ' }
@@ -22,58 +21,7 @@ function asciify(string) {
     for (const r in replacements) {
         string = string.replace(r, replacements[r])
     }
-
     return string
-}
-
-function initKeyboard() {
-    const keys = ['<ERTZUIOPŠĐ', 'ASDFGHJKLČĆŽ', ' ǄCVBNMǇǊ>']
-    
-    let keyboard = document.getElementById('keyboard')
-    keyboard.innerHTML = ''
-
-    keys.forEach(r => {
-        
-        let row = document.createElement('div')
-        row.classList.add('row')
-
-        r.split('').forEach(c => {
-            if (c == '<') {
-                let key = document.createElement('button')
-                key.id = 'delete-key'
-                key.classList.add('key', 'delete-key')
-                key.innerHTML = 'BRIŠI'
-                key.addEventListener('click', () => clicktypeSpecial('delete'))
-                key.dataset.color = 'unused'
-                row.appendChild(key)
-            }
-            else if (c == '>') {
-                let key = document.createElement('button')
-                key.id = 'enter-key'
-                key.classList.add('key', 'enter-key')
-                key.innerHTML = 'ENTER'
-                key.addEventListener('click', () => clicktypeSpecial('enter'))
-                key.dataset.color = 'unused'
-                row.appendChild(key)
-            }
-            else {
-                let key = document.createElement('button')
-                key.classList.add('key')
-                let letter = c
-                key.id = 'key' + letter
-                key.innerHTML = asciify(letter)
-                if (letter != ' ')
-                    key.addEventListener('click', () => clicktypeLetter(letter))
-                else
-                    key.style.visibility = 'hidden'
-                key.dataset.color = 'unused'
-                row.appendChild(key)
-            }
-        })
-
-        keyboard.appendChild(row)
-    });
-
 }
 
 function initPhysicalKeyboard() {
@@ -81,13 +29,11 @@ function initPhysicalKeyboard() {
     const keyLetterCodes = {
         'KeyE': 'E', 'KeyR': 'R', 'KeyT': 'T', 'KeyY': 'Z', 'KeyU': 'U', 'KeyI': 'I', 'KeyO': 'O', 'KeyP': 'P', 'BracketLeft': 'Š', 'BracketRight': 'Đ',
         'KeyA': 'A', 'KeyS': 'S', 'KeyD': 'D', 'KeyF': 'F', 'KeyG': 'G', 'KeyH': 'H', 'KeyJ': 'J', 'KeyK': 'K', 'KeyL': 'L', 'Semicolon': 'Č', 'Quote': 'Ć', 'Backslash': 'Ž',
-        /*'KeyZ': 'Z',*/ 'KeyX': 'Ǆ', 'KeyC': 'C', 'KeyV': 'V', 'KeyB': 'B', 'KeyN': 'N', 'KeyM': 'M', 'Comma': 'Ǉ', 'Period': 'Ǌ',
+        'KeyX': 'Ǆ', 'KeyC': 'C', 'KeyV': 'V', 'KeyB': 'B', 'KeyN': 'N', 'KeyM': 'M', 'Comma': 'Ǉ', 'Period': 'Ǌ',
     }
     const keySpecialCodes = {
-        'Backspace': 'delete', 'Enter': 'enter',
-        'Digit1': 'focus1', 'Digit2': 'focus2', 'Digit3': 'focus3', 'Digit4': 'focus4', 'Digit5': 'focus5',
-        'Digit6': 'focus6', 'Digit7': 'focus7', 'Digit8': 'focus8', 'Digit9': 'focus9', 'Digit0': 'focus10',
-        'ArrowLeft': 'moveLeft', 'ArrowRight': 'moveRight', 'Home': 'home', 'End': 'end', 'Escape': 'new'
+        'Backspace': 'delete', 'Enter': 'enter', 'Escape': 'clear',  'F9': 'new',
+        'ArrowLeft': 'moveLeft', 'ArrowRight': 'moveRight', 'Home': 'home', 'End': 'end'
     }
 
     document.addEventListener('keydown', function (e) {
@@ -98,22 +44,63 @@ function initPhysicalKeyboard() {
         if (e.code == 'Enter' || e.code == 'Space')
             e.preventDefault()
 
-        if (e.code in keyLetterCodes) {
-            possibleKeyboardDigraph = true
-            clicktypeLetter(keyLetterCodes[e.code])
-        }
+        if (e.code in keyLetterCodes)
+            typedLetter(keyLetterCodes[e.code])
         else if (e.code in keySpecialCodes)
-            clicktypeSpecial(keySpecialCodes[e.code])
-        else
-            console.log('unhandled keyboard event ' + e.code + ' ' + e.key)
+            clickedOrTypedSpecial(keySpecialCodes[e.code])
     });
+}
+
+function initOnscreenKeyboard() {
+    const keys = ['<ERTZUIOPŠĐ', 'ASDFGHJKLČĆŽ', ' ǄCVBNMǇǊ>']
+    
+    const keyboard = document.getElementById('keyboard')
+    keyboard.replaceChildren()
+
+    keys.forEach(r => {
+        
+        const row = document.createElement('div')
+        row.classList.add('row')
+
+        r.split('').forEach(c => {
+            let key
+            if (c == '<')
+                key = createOnScreenKey('delete-key', ['key', 'delete-key'], 'BRIŠI', () => clickedOrTypedSpecial('delete'))
+            else if (c == '>')
+                key = createOnScreenKey('enter-key', ['key', 'enter-key'], 'ENTER', () => clickedOrTypedSpecial('enter'))
+            else if (c != ' ')
+                key = createOnScreenKey('key' + c, ['key'], asciify(c), () => clickedLetter(c))
+            else
+                key = createOnScreenDummyKey()
+                
+            row.appendChild(key)
+        })
+
+        keyboard.appendChild(row)
+    });
+}
+
+function createOnScreenKey(id, classes, text, onclick) {
+    let key = document.createElement('button')
+    key.id = id
+    key.classList.add(...classes)
+    key.innerHTML = text
+        key.addEventListener('click', onclick)
+    key.dataset.color = 'unused'
+    return key
+}
+
+function createOnScreenDummyKey() {
+    let key = document.createElement('button')
+    key.style.visibility = 'hidden'
+    return key
 }
 
 function initBoard() {
 
     let board = document.getElementById('board')
-    board.innerHTML = ''
-
+    board.replaceChildren()
+    
     for (let row = 0; row < maxTries; row++) {
 
         let tileRow = document.createElement('div')
@@ -125,6 +112,7 @@ function initBoard() {
             tile.addEventListener('click', function() {
                 if (gameRunning && row == currentRow)
                     setCursor(row, t)
+                lastColumnIfLastActionWasTypeLetterElseUndefined = undefined
             })
             tileRow.appendChild(tile)
         }
@@ -132,46 +120,46 @@ function initBoard() {
     }
 }
 
-function clicktypeLetter(letter) {
+function clickedLetter(letter) {
+    if (!gameRunning) return
 
-    console.log('clicked or typed ' + letter + '   (asciified: ' + asciify(letter) + '), possibleKeyboardDigraph:'+possibleKeyboardDigraph)
+    lastColumnIfLastActionWasTypeLetterElseUndefined = undefined
 
-    if (!gameRunning)
-        return
+    insertLetter(letter)
+}
 
-    if (possibleKeyboardDigraph && currentCol >= 1 && (letter == 'J' || letter == 'Ž')) {
-        
-        // TODO: doesn't work when trying to type digraph into second-to-last column if the last column already has a letter
+function typedLetter(letter) {
+    if (!gameRunning) return
 
-        const lastColWritten = currentCol == wordLength-1 && getTile(currentRow, currentCol).dataset.letter !== undefined && getTile(currentRow, currentCol).dataset.letter != ''
-        
-        const prevLetter = getTile(currentRow, lastColWritten? currentCol : currentCol-1).dataset.letter
-
-        if (prevLetter == 'D' && letter == 'Ž') {
-            letter = 'Ǆ'
-            if (!lastColWritten)
-                currentCol--
-        } else if (prevLetter == 'L' && letter == 'J') {
-            letter = 'Ǉ'
-            if (!lastColWritten)
-                currentCol--
-        } else if (prevLetter == 'N' && letter == 'J') {
-            letter = 'Ǌ'
-            if (!lastColWritten)
-                currentCol--
+    if (lastColumnIfLastActionWasTypeLetterElseUndefined !== undefined) {
+        const firstLetter = getTile(currentRow, lastColumnIfLastActionWasTypeLetterElseUndefined).dataset.letter
+        if (firstLetter == 'D' && letter == 'Ž') {
+            writeTile(currentRow, lastColumnIfLastActionWasTypeLetterElseUndefined, 'Ǆ')
+            return
+        } else if (firstLetter == 'L' && letter == 'J') {
+            writeTile(currentRow, lastColumnIfLastActionWasTypeLetterElseUndefined, 'Ǉ')
+            return
+        } else if (firstLetter == 'N' && letter == 'J') {
+            writeTile(currentRow, lastColumnIfLastActionWasTypeLetterElseUndefined, 'Ǌ')
+            return
         }
     }
 
-    possibleKeyboardDigraph = false
+    lastColumnIfLastActionWasTypeLetterElseUndefined = currentCol;
 
+    insertLetter(letter)
+}
+
+function insertLetter(letter) {
     writeTile(currentRow, currentCol, letter)
 
     if (currentCol < wordLength-1)
         setCursor(currentRow, currentCol+1)
 }
 
-function clicktypeSpecial(what) {
-    console.log('clicked or typed ' + what)
+function clickedOrTypedSpecial(what) {
+
+    lastColumnIfLastActionWasTypeLetterElseUndefined = undefined
 
     if (what == 'new') {
         startGame()
@@ -183,9 +171,13 @@ function clicktypeSpecial(what) {
 
     if (what == 'delete') {
         if (currentCol > 0 && currentCol <= wordLength-1 && getTile(currentRow, currentCol).dataset.letter == '')
-            setCursor(currentRow, currentCol-1) 
+            setCursor(currentRow, currentCol-1)
         writeTile(currentRow, currentCol, '')
-
+    } else if (what == 'clear') {
+        for (let c = 0; c < wordLength; c++) {
+            writeTile(currentRow, c, '')
+        }
+        setCursor(currentRow, 0)
     } else if (what == 'moveLeft') {
         if (currentCol > 0)
             setCursor(currentRow, currentCol-1)
@@ -199,23 +191,22 @@ function clicktypeSpecial(what) {
     } else if (what == 'enter') {
         submitWord()
     }
-        
 }
 
 function startGame() {
 
+    lastColumnIfLastActionWasTypeLetterElseUndefined = undefined
     initBoard()
-    initKeyboard()
+    initOnscreenKeyboard()
 
-    word = words[Math.floor(Math.random() * words.length)].toUpperCase()
+    word = challengeWords[Math.floor(Math.random() * challengeWords.length)].toUpperCase()
     currentCol = 0
     currentRow = 0
     setCursor(0, 0)
     
-    displayMessage('Započeta nova igra', 'unused', '1000')
+    displayMessage('Započeta je nova igra. Sretno!', 'unused', 1500)
 
     gameRunning = true;
-
 }
 
 function submitWord() {
@@ -226,7 +217,7 @@ function submitWord() {
         const tile = getTile(currentRow, c);
         const letter = tile.dataset.letter;
         if (letter === undefined || letter == '') {
-            displayMessage('Upišite cijelu riječ!', 'yellow', 2000)
+            displayMessage('Upišite cijelu riječ!', 'yellow', 1500)
             return
         }
 
@@ -274,7 +265,6 @@ function getTile(row, col) {
 
 function writeTile(row, col, character, color) {
     let tile = getTile(row,col)
-    console.log('writing tile ' + row + ',' + col + ': ' + tile)
     tile.innerHTML = asciify(character)
     tile.dataset.letter = character
 
@@ -290,7 +280,7 @@ function paintKey(character, color) {
         return
     if (key.dataset.color == 'yellow' && color == 'green')
         key.dataset.color = 'green'
-    if (key.dataset.color == 'unused')
+    else if (key.dataset.color == 'unused')
         key.dataset.color = color
 }
 
