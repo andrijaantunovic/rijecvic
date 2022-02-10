@@ -26,8 +26,8 @@ Words come from projects [rjecnik-hrvatskih-jezika](https://github.com/gigaly/rj
 * 4, 6 & 7 letter variants (maybe?)
 
 ### Current bugs
-* Typing a digraph with keyboard combination into second-to-last tile doesn't work if the last tile already contains a letter
-* Message timeout sometimes doesn't work in mobile browsers?
+* ~Typing a digraph with keyboard combination into second-to-last tile doesn't work if the last tile already contains a letter~ fixed
+* ~Message timeout sometimes doesn't work in mobile browsers?~ can't reproduce anymore, maybe old js was cached
 
 ---
 ### You can play Riječvić [HERE](https://andrijaantunovic.github.io/rijecvic/) (GitHub Pages)
