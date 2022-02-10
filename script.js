@@ -1,19 +1,71 @@
 const maxTries = 6
 const wordLength = 5
-let running = false
+let gameRunning = false
+let challengeWordId
 let challengeWord
 let currentRow
 let currentCol
 let lastColumnIfLastActionWasTypeLetterElseUndefined
-
+let localStorageObject = {
+    'stats': {
+        'played': 0,
+        'won': 0,
+        'lost': 0,
+        'aborted': 0,
+        'winRate': 0.00,
+        'currentStreak': 0,
+        'maxStreak': 0,
+        'dist': [0,0,0,0,0,0]
+    },
+    'history': []
+}
 
 document.addEventListener('DOMContentLoaded', function () {
+
+    if (localStorage.getItem('rijecvic') == null) {
+        updateLocalStorage()
+    }
+    localStorageObject = JSON.parse(localStorage.getItem('rijecvic'))
 
     document.getElementById('new').addEventListener('click', () => startGame())
     initPhysicalKeyboard()
     startGame()
 }, false)
 
+function updateLocalStorage(result) {
+    if (result !== undefined) {
+        localStorageObject.history.push({
+            'time': new Date().toISOString(),
+            'wordId': challengeWordId,
+            'word': challengeWord,
+            'result': result,
+            'try': currentRow+1
+        })
+
+        if (localStorageObject.history.length > 100)
+            localStorageObject.history.shift()
+    
+        const stats = localStorageObject.stats
+        stats.played++
+    
+        if (result == 'win') {
+            stats.won++
+            stats.currentStreak++
+            if (stats.currentStreak > stats.maxStreak)
+                stats.maxStreak = stats.currentStreak
+            stats.dist[currentRow]++
+        } else if (result == 'lost') {
+            stats.lost++
+            stats.currentStreak = 0
+        } else if (result == 'aborted') {
+            stats.aborted++
+            stats.currentStreak = 0
+        }
+        stats.winRate = stats.won / stats.played
+    }
+
+    localStorage.setItem('rijecvic', JSON.stringify(localStorageObject))
+}
 
 function asciify(string) {
     const replacements = { 'Ǉ':'LJ', 'Ǌ':'NJ', 'Ǆ':'DŽ' }
@@ -72,7 +124,7 @@ function initOnscreenKeyboard() {
                 key = createOnScreenKey('key' + c, ['key'], asciify(c), () => clickedLetter(c))
             else
                 key = createOnScreenDummyKey()
-                
+
             row.appendChild(key)
         })
 
@@ -199,7 +251,14 @@ function startGame() {
     initBoard()
     initOnscreenKeyboard()
 
-    word = challengeWords[Math.floor(Math.random() * challengeWords.length)].toUpperCase()
+    if (gameRunning && currentRow > 0)
+        updateLocalStorage('aborted')
+
+    challengeWordId = Math.floor(Math.random() * challengeWords5.length)
+    challengeWord = challengeWords5[challengeWordId].toUpperCase()
+    challengeWordId += 50000
+    document.getElementById('word-id').innerText = '#' + challengeWordId
+
     currentCol = 0
     currentRow = 0
     setCursor(0, 0)
@@ -229,14 +288,18 @@ function submitWord() {
         return
     }
 
-    const result = writeTileRow(currentRow, guess, word)
+    const result = writeTileRow(currentRow, guess, challengeWord)
 
     if (result == 'win') {
         gameRunning = false
         displayMessage(`Bravo, pogodili ste riječ u ${currentRow+1}. pokušaju!`, 'green') //TODO: 🟩🟨⬛
     } else if (result == 'lost') {
         gameRunning = false
-        displayMessage(`Niste pogodili riječ u ${maxTries} pokušaja. Tražena riječ bila je ${asciify(word)}.`, 'yellow')
+        displayMessage(`Niste pogodili riječ u ${maxTries} pokušaja. Tražena riječ bila je ${asciify(challengeWord)}.`, 'yellow')
+    }
+
+    if (result == 'win' || result == 'lost') {
+        updateLocalStorage(result)
     }
 
     setCursor(currentRow+1, 0)

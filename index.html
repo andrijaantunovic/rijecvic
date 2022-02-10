@@ -7,13 +7,20 @@
     <title>Riječvić</title>
     <link rel="shortcut icon" href="favicon.ico?uncache=8ad1544a-4ff8-4ca4-9be5-442885fcbe1c" type="image/x-icon" />
     <meta name="color-scheme" content="dark">
-    <link href="style.css?uncache=5531a376-d767-4a2a-9e5e-3de4539f17bc" rel="stylesheet">
-    <script src="words.js?uncache=ae50b1ba-46c7-428d-ac26-13976ca0c5e5"></script>
-    <script src="script.js?uncache=4b30c737-6fce-450b-bab0-7d784fdcecd1"></script>
+    <link href="style.css?uncache=f3d3336c-9b48-4fc9-baef-0331fa8511c6" rel="stylesheet">
+    <script src="words.js?uncache=d82baf6e-020e-422f-ae04-3b91afe7194f"></script>
+    <script src="script.js?uncache=8a06e641-751a-4306-aa98-40e72a3869d8"></script>
 </head>
 <body>
-    
-    <button id="new" data-color="unused">NOVA<br>RIJEČ</button>
+    <div id="navbar">
+        <a id="new">Novi riječvić</a>
+        <div id="title">Riječvić&nbsp;<span id="word-id"></span></div>
+        <!-- <a>Statistika</a>
+        <a>Pomoć</a>
+        <a>Postavke</a> -->
+        <a style="visibility: hidden;"></a>
+    </div>
+
     <div id="board"></div>
     <div id="message-container"><p id="message"></p></div>
     <div id="keyboard"></div>
