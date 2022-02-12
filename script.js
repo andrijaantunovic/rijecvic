@@ -1,96 +1,331 @@
-const maxTries = 6
-const wordLength = 5
-let gameRunning = false
-let challengeWordId
-let challengeWord
-let currentRow
-let currentCol
-let lastColumnIfLastActionWasTypeLetterElseUndefined
-let localStorageObject = {
-    'stats': {
-        'played': 0,
-        'won': 0,
-        'lost': 0,
-        'aborted': 0,
-        'winRate': 0.00,
-        'currentStreak': 0,
-        'maxStreak': 0,
-        'dist': [0,0,0,0,0,0]
-    },
-    'history': []
+let lastColumnIfLastActionWasTypeLetterElseUndefined // still here, still ugly...
+
+let currentGame
+
+class HistoricalEntry {
+    constructor(startTime, wordId, word, result, tryy, guesses) {
+        this.startTime = startTime,
+        this.endTime = new Date().toISOString(),
+        this.wordId = wordId,
+        this.word = word,
+        this.result = result,
+        this.try = tryy
+        this.guesses = guesses
+    }
 }
+
+class Game {
+
+    maxTries
+    wordLength
+    challengeWordId
+    challengeWord
+    rows = []
+    draft = []
+    currentRow
+    currentCol
+    running = false
+    restoring = false
+    startTime
+
+    initBoard() {
+
+        let board = document.getElementById('board')
+        board.replaceChildren()
+        
+        for (let row = 0; row < this.maxTries; row++) {
+    
+            let tileRow = document.createElement('div')
+            tileRow.classList.add('tile-row')
+    
+            for (let t = 0; t < this.wordLength; t++) {
+                let tile = document.createElement('div')
+                tile.classList.add('tile')
+                tile.dataset.letter = ''
+                tile.addEventListener('click', function() {
+                    if (currentGame.running && row == currentGame.currentRow)
+                        currentGame.moveTo(t)
+                    lastColumnIfLastActionWasTypeLetterElseUndefined = undefined
+                })
+                tileRow.appendChild(tile)
+            }
+            board.appendChild(tileRow)
+        }
+    }
+
+    initNew(maxTries, wordLength, wordId) {
+
+        this.maxTries = maxTries
+        this.wordLength = wordLength
+        this.rows = new Array(maxTries).fill(null)
+        this.draft = new Array(wordLength).fill(null)
+        this.currentRow = 0
+        this.currentCol = 0
+
+        this.initBoard()
+        initOnscreenKeyboard()
+
+        if (wordId === undefined) {
+            const gameHistory = loadGameHistoryFromLocalStorage()
+            do {
+                this.challengeWordId = Math.floor(Math.random() * challengeWords[wordLength].length) + 10000*wordLength
+                this.challengeWord = challengeWords[wordLength][this.challengeWordId-10000*this.wordLength].toUpperCase()
+            } while (gameHistory && gameHistory.length*1.5 <= challengeWords[wordLength].length && gameHistory.some(g => g.word == this.challengeWord))
+        } else {
+            this.challengeWordId = wordId
+            this.challengeWord = challengeWords[wordLength][this.challengeWordId-10000*this.wordLength].toUpperCase()
+        }
+        document.getElementById('word-id').innerText = '#' + this.challengeWordId
+
+        this.startTime = new Date().toISOString()
+        displayMessage('Započeta je nova igra. Sretno!', 'unused', 1500)
+
+        this.running = true
+        this.moveTo(0, 0)
+    }
+
+    restoreFromLocalStorage() {
+        
+        const savedGameJson = localStorage.getItem('rijecvic.saved')
+        if (savedGameJson == null)
+            return false
+
+        const savedGame = JSON.parse(savedGameJson)
+
+        this.restoring = true
+        
+        this.maxTries = savedGame.maxTries
+        this.wordLength = savedGame.wordLength
+        this.challengeWordId = savedGame.challengeWordId
+        document.getElementById('word-id').innerText = '#' + this.challengeWordId
+        this.challengeWord = savedGame.challengeWord
+        this.startTime = savedGame.startTime
+
+        this.initBoard()
+        initOnscreenKeyboard()
+
+        this.currentRow = 0
+        this.currentCol = 0
+        savedGame.rows.forEach((row, i) => {
+            if (row) {
+                this.rows[i] = row
+                this.writeRow(row.split(''))
+            }
+        })
+        this.moveTo(savedGame.currentCol)
+        this.draft = new Array(this.wordLength).fill(null)
+        savedGame.draft.forEach((letter, i) => {
+            this.write(letter, i)
+        })
+
+        displayMessage('Nastavljamo spremljenu igru. Sretno!', 'yellow', 3000)
+        this.restoring = false
+        
+        this.running = true
+
+        return true
+    }
+
+    lastCol() {
+        return this.currentCol >= this.wordLength
+    }
+
+    saveGameStateToLocalStorage() {
+        if (this.restoring)
+            return
+        localStorage.setItem('rijecvic.saved', JSON.stringify(this))
+    }
+
+    moveTo(column, row = this.currentRow) {
+        if (!this.running && !this.restoring) return
+
+        if (column >= 0 && column < this.wordLength) {
+            const tileMovingFrom = getTile(this.currentRow, this.currentCol)
+            const tileMovingTo = getTile(row, column)
+            this.currentCol = column
+            this.currentRow = row
+            tileMovingFrom.classList.remove('current')
+            tileMovingTo.classList.add('current')
+            this.saveGameStateToLocalStorage()
+        }
+    }
+    moveLeft()    { this.moveTo(this.currentCol-1)    }
+    moveRight()   { this.moveTo(this.currentCol+1)    }
+    moveHome()    { this.moveTo(0)                    }
+    moveEnd()     { this.moveTo(this.wordLength-1)    }
+    moveNextRow() { this.moveTo(0, this.currentRow+1) }
+
+    removeCursorFrame() {
+        getTile(this.currentRow, this.currentCol).classList.remove('current')
+    }
+
+    write(letter, column = this.currentCol) {
+        if (!this.running && !this.restoring) return
+
+        this.draft[column] = letter ? letter : null
+        setTile(this.currentRow, column, letter ? letter : '')
+        this.saveGameStateToLocalStorage()
+    }
+
+    delete() {
+        if (!this.running) return
+
+        if (this.draft[this.currentCol] == null)
+            this.moveLeft()
+        this.draft[this.currentCol] = null
+        setTile(this.currentRow, this.currentCol, '')
+        this.saveGameStateToLocalStorage()
+    }
+
+    clear() {
+        if (!this.running) return
+
+        this.draft.forEach(d => d = '')
+        for (let c = 0; c < wordLength; c++) {
+            setTile(this.currentRow, c, '')
+        }
+        this.saveGameStateToLocalStorage()
+    }
+
+    submitWord() {
+        if (!this.running) return
+
+        if (this.draft.some(c => c == null)) {
+            displayMessage('Upišite cijelu riječ!', 'yellow', 1500)
+            return
+        }
+        const guess = this.draft.join('')
+        if (!dictionary[this.wordLength].includes(guess)) {
+            displayMessage(`Riječ ${guess} ne postoji u rječniku!`, 'yellow', 2500)
+            return
+        }
+
+        this.rows[this.currentRow] = guess
+        const draftCopy = [...this.draft]
+        this.draft.fill(null)
+        this.writeRow(draftCopy)
+    }
+
+    writeRow(letters) {
+        let comparingWord = this.challengeWord.split('')
+
+        letters.forEach((letter, i) => {
+            if (letter == comparingWord[i]) {
+                setTile(this.currentRow, i, letter, 'green')
+                comparingWord[i] = '!'
+            }
+        });
+        letters.forEach((letter, i) => {
+            if (letter && comparingWord[i] != '!' && comparingWord.includes(letter)) {
+                setTile(this.currentRow, i, letter, 'yellow')
+                comparingWord[i] = '?'
+            }
+        });
+        letters.forEach((letter, i) => {
+            if (letter && comparingWord[i] != '!' && comparingWord[i] != '?') {
+                setTile(this.currentRow, i, letter, 'gray')
+            }
+        });
+
+        if (comparingWord.every(c => c == '!'))
+            this.win()
+        else if (this.currentRow == this.maxTries-1)
+            this.lose()
+        else {
+            this.moveNextRow()
+            this.saveGameStateToLocalStorage()
+        }
+    }
+
+    win() {
+        displayMessage(`Bravo, pogodili ste riječ u ${this.currentRow+1}. pokušaju!`, 'green')
+        this.completion('won')
+    }
+
+    lose() {
+        displayMessage(`Niste pogodili riječ u ${this.maxTries} pokušaja. Tražena riječ bila je ${asciify(this.challengeWord)}.`, 'yellow')
+        this.completion('lost')
+    }
+
+    abort() {
+        if (!this.running || this.currentRow <= 0)
+            return
+        this.completion('aborted')
+    }
+
+    completion(result) {
+
+        this.removeCursorFrame()
+        this.running = false
+
+        const gameHistory = loadGameHistoryFromLocalStorage()
+        const gameStats = loadGameStatsFromLocalStorage()
+
+        gameHistory.push(new HistoricalEntry(this.startTime, this.challengeWordId, this.challengeWord, result, this.currentRow, this.rows))
+
+        if (gameHistory.length > 250)
+            gameHistory.shift()
+
+        gameStats.played++
+        if (result == 'won') {
+            gameStats.won++
+            gameStats.currentStreak++
+            if (gameStats.currentStreak > gameStats.maxStreak)
+                gameStats.maxStreak = gameStats.currentStreak
+            gameStats.dist[this.currentRow]++
+        } else if (result == 'lost') {
+            gameStats.lost++
+            gameStats.currentStreak = 0
+        } else if (result == 'aborted') {
+            gameStats.aborted++
+            gameStats.currentStreak = 0
+        }
+        gameStats.winRate = gameStats.won / gameStats.played
+
+        updateGameHistoryInLocalStorage(gameHistory)
+        updateGameStatsInLocalStorage(gameStats)
+        clearSavedGameFromLocalStorage()
+    }
+
+}
+
+
+
+// -------- ON WEBSITE LOAD --------
 
 document.addEventListener('DOMContentLoaded', function () {
 
-    if (localStorage.getItem('rijecvic') == null) {
-        updateLocalStorage()
-    }
-    localStorageObject = JSON.parse(localStorage.getItem('rijecvic'))
+    convertDeprecatedLocalStorage()
 
-    document.getElementById('new').addEventListener('click', () => startGame())
+    document.getElementById('new').addEventListener('click', () => newGame())
     initPhysicalKeyboard()
-    startGame()
+
+    currentGame = new Game()
+
+    if (!currentGame.restoreFromLocalStorage())
+        currentGame.initNew(6, 5)
+    
 }, false)
 
-function updateLocalStorage(result) {
-    if (result !== undefined) {
-        localStorageObject.history.push({
-            'time': new Date().toISOString(),
-            'wordId': challengeWordId,
-            'word': challengeWord,
-            'result': result,
-            'try': currentRow+1
-        })
 
-        if (localStorageObject.history.length > 100)
-            localStorageObject.history.shift()
-    
-        const stats = localStorageObject.stats
-        stats.played++
-    
-        if (result == 'win') {
-            stats.won++
-            stats.currentStreak++
-            if (stats.currentStreak > stats.maxStreak)
-                stats.maxStreak = stats.currentStreak
-            stats.dist[currentRow]++
-        } else if (result == 'lost') {
-            stats.lost++
-            stats.currentStreak = 0
-        } else if (result == 'aborted') {
-            stats.aborted++
-            stats.currentStreak = 0
-        }
-        stats.winRate = stats.won / stats.played
-    }
 
-    localStorage.setItem('rijecvic', JSON.stringify(localStorageObject))
-}
-
-function asciify(string) {
-    const replacements = { 'Ǉ':'LJ', 'Ǌ':'NJ', 'Ǆ':'DŽ' }
-
-    for (const r in replacements) {
-        string = string.replace(r, replacements[r])
-    }
-    return string
-}
+// -------- INTIALIZE PHYSICAL KEYBOARD --------
 
 function initPhysicalKeyboard() {
 
     const keyLetterCodes = {
         'KeyE': 'E', 'KeyR': 'R', 'KeyT': 'T', 'KeyY': 'Z', 'KeyU': 'U', 'KeyI': 'I', 'KeyO': 'O', 'KeyP': 'P', 'BracketLeft': 'Š', 'BracketRight': 'Đ',
         'KeyA': 'A', 'KeyS': 'S', 'KeyD': 'D', 'KeyF': 'F', 'KeyG': 'G', 'KeyH': 'H', 'KeyJ': 'J', 'KeyK': 'K', 'KeyL': 'L', 'Semicolon': 'Č', 'Quote': 'Ć', 'Backslash': 'Ž',
-        'KeyX': 'Ǆ', 'KeyC': 'C', 'KeyV': 'V', 'KeyB': 'B', 'KeyN': 'N', 'KeyM': 'M', 'Comma': 'Ǉ', 'Period': 'Ǌ',
+        'KeyC': 'C', 'KeyV': 'V', 'KeyB': 'B', 'KeyN': 'N', 'KeyM': 'M'
     }
     const keySpecialCodes = {
-        'Backspace': 'delete', 'Enter': 'enter', 'Escape': 'clear',  'F9': 'new',
-        'ArrowLeft': 'moveLeft', 'ArrowRight': 'moveRight', 'Home': 'home', 'End': 'end'
+        'Backspace': 'delete', 'Enter': 'enter', 'Escape': 'clear', 'F9': 'new',
+        'ArrowLeft': 'moveLeft', 'ArrowRight': 'moveRight', 'Space': 'moveRight', 'Home': 'home', 'End': 'end'
     }
 
     document.addEventListener('keydown', function (e) {
 
-        if (!gameRunning && e.code != 'Escape')
+        if ((!currentGame || !currentGame.running) && e.code != 'F9')
             return
 
         if (e.code == 'Enter' || e.code == 'Space')
@@ -102,6 +337,10 @@ function initPhysicalKeyboard() {
             clickedOrTypedSpecial(keySpecialCodes[e.code])
     });
 }
+
+
+
+// -------- ON-SCREEN KEYBOARD --------
 
 function initOnscreenKeyboard() {
     const keys = ['<ERTZUIOPŠĐ', 'ASDFGHJKLČĆŽ', ' ǄCVBNMǇǊ>']
@@ -148,197 +387,8 @@ function createOnScreenDummyKey() {
     return key
 }
 
-function initBoard() {
-
-    let board = document.getElementById('board')
-    board.replaceChildren()
-    
-    for (let row = 0; row < maxTries; row++) {
-
-        let tileRow = document.createElement('div')
-        tileRow.classList.add('tile-row')
-
-        for (let t = 0; t < wordLength; t++) {
-            let tile = document.createElement('div')
-            tile.classList.add('tile')
-            tile.addEventListener('click', function() {
-                if (gameRunning && row == currentRow)
-                    setCursor(row, t)
-                lastColumnIfLastActionWasTypeLetterElseUndefined = undefined
-            })
-            tileRow.appendChild(tile)
-        }
-        board.appendChild(tileRow)
-    }
-}
-
-function clickedLetter(letter) {
-    if (!gameRunning) return
-
-    lastColumnIfLastActionWasTypeLetterElseUndefined = undefined
-
-    insertLetter(letter)
-}
-
-function typedLetter(letter) {
-    if (!gameRunning) return
-
-    if (lastColumnIfLastActionWasTypeLetterElseUndefined !== undefined) {
-        const firstLetter = getTile(currentRow, lastColumnIfLastActionWasTypeLetterElseUndefined).dataset.letter
-        if (firstLetter == 'D' && letter == 'Ž') {
-            writeTile(currentRow, lastColumnIfLastActionWasTypeLetterElseUndefined, 'Ǆ')
-            return
-        } else if (firstLetter == 'L' && letter == 'J') {
-            writeTile(currentRow, lastColumnIfLastActionWasTypeLetterElseUndefined, 'Ǉ')
-            return
-        } else if (firstLetter == 'N' && letter == 'J') {
-            writeTile(currentRow, lastColumnIfLastActionWasTypeLetterElseUndefined, 'Ǌ')
-            return
-        }
-    }
-
-    lastColumnIfLastActionWasTypeLetterElseUndefined = currentCol;
-
-    insertLetter(letter)
-}
-
-function insertLetter(letter) {
-    writeTile(currentRow, currentCol, letter)
-
-    if (currentCol < wordLength-1)
-        setCursor(currentRow, currentCol+1)
-}
-
-function clickedOrTypedSpecial(what) {
-
-    lastColumnIfLastActionWasTypeLetterElseUndefined = undefined
-
-    if (what == 'new') {
-        startGame()
-        return
-    }
-
-    if (!gameRunning)
-        return
-
-    if (what == 'delete') {
-        if (currentCol > 0 && currentCol <= wordLength-1 && getTile(currentRow, currentCol).dataset.letter == '')
-            setCursor(currentRow, currentCol-1)
-        writeTile(currentRow, currentCol, '')
-    } else if (what == 'clear') {
-        for (let c = 0; c < wordLength; c++) {
-            writeTile(currentRow, c, '')
-        }
-        setCursor(currentRow, 0)
-    } else if (what == 'moveLeft') {
-        if (currentCol > 0)
-            setCursor(currentRow, currentCol-1)
-    } else if (what == 'moveRight') {
-        if (currentCol < wordLength-1)
-            setCursor(currentRow, currentCol+1)
-    } else if (what == 'home') {
-        setCursor(currentRow, 0)
-    } else if (what == 'end') {
-        setCursor(currentRow, wordLength-1)
-    } else if (what == 'enter') {
-        submitWord()
-    }
-}
-
-function startGame() {
-
-    lastColumnIfLastActionWasTypeLetterElseUndefined = undefined
-    initBoard()
-    initOnscreenKeyboard()
-
-    if (gameRunning && currentRow > 0)
-        updateLocalStorage('aborted')
-
-    challengeWordId = Math.floor(Math.random() * challengeWords5.length)
-    challengeWord = challengeWords5[challengeWordId].toUpperCase()
-    challengeWordId += 50000
-    document.getElementById('word-id').innerText = '#' + challengeWordId
-
-    currentCol = 0
-    currentRow = 0
-    setCursor(0, 0)
-    
-    displayMessage('Započeta je nova igra. Sretno!', 'unused', 1500)
-
-    gameRunning = true;
-}
-
-function submitWord() {
-
-    let guess = ''
-
-    for (let c = 0; c < wordLength; c++) {
-        const tile = getTile(currentRow, c);
-        const letter = tile.dataset.letter;
-        if (letter === undefined || letter == '') {
-            displayMessage('Upišite cijelu riječ!', 'yellow', 1500)
-            return
-        }
-
-        guess += letter
-    }
-
-    if (!dictionary.includes(guess)) {
-        displayMessage(`Riječ ${asciify(guess)} ne postoji u rječniku!`, 'yellow', 2500)
-        return
-    }
-
-    const result = writeTileRow(currentRow, guess, challengeWord)
-
-    if (result == 'win') {
-        gameRunning = false
-        displayMessage(`Bravo, pogodili ste riječ u ${currentRow+1}. pokušaju!`, 'green') //TODO: 🟩🟨⬛
-    } else if (result == 'lost') {
-        gameRunning = false
-        displayMessage(`Niste pogodili riječ u ${maxTries} pokušaja. Tražena riječ bila je ${asciify(challengeWord)}.`, 'yellow')
-    }
-
-    if (result == 'win' || result == 'lost') {
-        updateLocalStorage(result)
-    }
-
-    setCursor(currentRow+1, 0)
-}
-
-function setCursor(row, col) {
-
-    getTile(currentRow, currentCol).classList.remove('current')
-    
-    if (row >= maxTries) {
-        gameRunning = false
-        currentCol = 0
-        currentRow = 0
-        return
-    }
-    
-    currentRow = row
-    currentCol = col
-    getTile(currentRow, currentCol).classList.add('current')
-}
-
-
-function getTile(row, col) {
-    return document.getElementById('board').children.item(row).children.item(col)
-}
-
-function writeTile(row, col, character, color) {
-    let tile = getTile(row,col)
-    tile.innerHTML = asciify(character)
-    tile.dataset.letter = character
-
-    if (typeof color !== 'undefined') {
-        tile.dataset.color = color
-        paintKey(character, color)
-    }
-}
-
-function paintKey(character, color) {
-    let key = document.getElementById('key' + character)
+function paintKey(letter, color) {
+    let key = document.getElementById('key' + letter)
     if (key.dataset.color == 'green')
         return
     if (key.dataset.color == 'yellow' && color == 'green')
@@ -347,41 +397,114 @@ function paintKey(character, color) {
         key.dataset.color = color
 }
 
-function writeTileRow(row, string, correctString) {
 
-    if (typeof correctString === 'string') {
-        correctString = correctString.split('')
-    }
+// -------- TILE MANIPULATION --------
 
-    for (let i = 0; i < string.length; i++) {
-
-        if (string[i] == correctString[i]) {
-            writeTile(row, i, string[i], 'green')
-            correctString[i] = '!'
-        }
-    }
-
-    for (let i = 0; i < string.length; i++) {
-
-        if (correctString[i] != '!') {
-            const index = correctString.indexOf(string[i])
-
-            if (index > -1) {
-                writeTile(row, i, string[i], 'yellow')
-                correctString[index] = '?'
-            } else {
-                writeTile(row, i, string[i], 'gray')
-            }
-        }
-    }
-
-    if (correctString.every(char => char == '!'))
-        return 'win'
-    else if (row == maxTries-1)
-        return 'lost'
-    else
-        return 'continue'
+function getTile(row, col) {
+    return document.getElementById('board').children.item(row).children.item(col)
 }
+
+function setTile(row, column, letter, color) {
+    const tile = getTile(row, column)
+    tile.dataset.letter = letter
+    tile.innerHTML = asciify(letter)
+    if (color) {
+        tile.dataset.color = color
+        paintKey(letter, color)
+    }
+}
+
+
+
+// -------- EVENTS --------
+
+function clickedLetter(letter) {
+    if (!currentGame || !currentGame.running) return
+
+    lastColumnIfLastActionWasTypeLetterElseUndefined = undefined
+
+    insertLetter(letter)
+}
+
+function typedLetter(letter) {
+    if (!currentGame || !currentGame.running) return
+
+    if (lastColumnIfLastActionWasTypeLetterElseUndefined !== undefined) {
+
+        const firstLetter = getTile(currentGame.currentRow, lastColumnIfLastActionWasTypeLetterElseUndefined).dataset.letter
+        if (firstLetter == 'D' && letter == 'Ž') {
+            currentGame.write('Ǆ', lastColumnIfLastActionWasTypeLetterElseUndefined)
+            return
+        } else if (firstLetter == 'L' && letter == 'J') {
+            currentGame.write('Ǉ', lastColumnIfLastActionWasTypeLetterElseUndefined)
+            return
+        } else if (firstLetter == 'N' && letter == 'J') {
+            currentGame.write('Ǌ', lastColumnIfLastActionWasTypeLetterElseUndefined)
+            return
+        }
+    }
+
+    lastColumnIfLastActionWasTypeLetterElseUndefined = currentGame.currentCol;
+
+    insertLetter(letter)
+}
+
+function insertLetter(letter) {
+    currentGame.write(letter)
+    currentGame.moveRight()
+}
+
+function clickedOrTypedSpecial(what) {
+
+    lastColumnIfLastActionWasTypeLetterElseUndefined = undefined
+
+    if (what == 'new') {
+        newGame()
+        return
+    }
+
+    if (!currentGame.running)
+        return
+
+    if (what == 'delete')
+        currentGame.delete()
+    else if (what == 'clear')
+        currentGame.clear()
+    else if (what == 'moveLeft')
+        currentGame.moveLeft()
+    else if (what == 'moveRight')
+        currentGame.moveRight()
+    else if (what == 'home')
+        currentGame.moveHome()
+    else if (what == 'end')
+        currentGame.moveEnd()
+    else if (what == 'enter')
+        currentGame.submitWord()
+}
+
+function newGame() {
+    currentGame.abort()
+    currentGame = new Game()
+    currentGame.initNew(6, 5)
+}
+
+// -------- ASCIIFY --------
+
+function asciify(string) {
+    if (!string)
+        return ''
+    
+    const replacements = { 'Ǉ':'LJ', 'Ǌ':'NJ', 'Ǆ':'DŽ' }
+
+    for (const r in replacements) {
+        string = string.replace(r, replacements[r])
+    }
+    return string
+}
+
+
+
+// -------- MESSAGE DISPLAY FUNCTIONS --------
 
 let timerId
 
@@ -398,4 +521,67 @@ function displayMessage(message, color, timeout) {
 function hideMessage() {
     document.getElementById('message').innerText = ''
     delete document.getElementById('message-container').dataset.color
+}
+
+
+
+// -------- LOCAL STORAGE HELPER FUNCTIONS --------
+
+function loadGameHistoryFromLocalStorage() {
+    const historyJson = localStorage.getItem('rijecvic.history')
+    if (historyJson)
+        return JSON.parse(historyJson)
+    else
+        return []
+}
+
+function loadGameStatsFromLocalStorage() {
+    const statsJson = localStorage.getItem('rijecvic.stats')
+    if (statsJson)
+        return JSON.parse(statsJson)
+    else
+        return {
+            'played': 0,
+            'won': 0,
+            'lost': 0,
+            'aborted': 0,
+            'winRate': 0.00,
+            'currentStreak': 0,
+            'maxStreak': 0,
+            'dist': [0,0,0,0,0,0]
+        }
+}
+
+function updateGameHistoryInLocalStorage(gameHistory) {
+    localStorage.setItem('rijecvic.history', JSON.stringify(gameHistory))
+}
+
+function updateGameStatsInLocalStorage(gameStats) {
+    localStorage.setItem('rijecvic.stats', JSON.stringify(gameStats))
+}
+
+function clearSavedGameFromLocalStorage() {
+    localStorage.removeItem('rijecvic.saved')
+}
+
+function convertDeprecatedLocalStorage() {
+    if (localStorage.getItem('rijecvic') != null) {
+
+        const legacyObject = JSON.parse(localStorage.getItem('rijecvic'))
+        localStorage.setItem('rijecvic.stats', JSON.stringify(legacyObject.stats))
+        legacyObject.history.forEach(h => {
+            if (h.result == 'win')
+                h.result = 'won'
+            h.startTime = null
+            h.endTime = h.time
+            delete h.time
+            h.guesses = null
+        })
+        localStorage.setItem('rijecvic.history', JSON.stringify(legacyObject.history))
+        localStorage.removeItem('rijecvic')
+    }
+}
+
+function cheat() {
+    return currentGame.challengeWord
 }
