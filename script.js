@@ -214,18 +214,18 @@ class Game {
                 setTile(this.currentRow, i, letter, 'green')
                 comparingWord[i] = '!'
             }
-        });
+        })
         letters.forEach((letter, i) => {
-            if (letter && comparingWord[i] != '!' && comparingWord.includes(letter)) {
-                setTile(this.currentRow, i, letter, 'yellow')
-                comparingWord[i] = '?'
+            if (letter && comparingWord[i] != '!') {
+                const ci = comparingWord.indexOf(letter)
+                if (ci > -1) {
+                    setTile(this.currentRow, i, letter, 'yellow')
+                    comparingWord[ci] = '?'
+                } else {
+                    setTile(this.currentRow, i, letter, 'gray')
+                }
             }
-        });
-        letters.forEach((letter, i) => {
-            if (letter && comparingWord[i] != '!' && comparingWord[i] != '?') {
-                setTile(this.currentRow, i, letter, 'gray')
-            }
-        });
+        })
 
         if (comparingWord.every(c => c == '!'))
             this.win()
