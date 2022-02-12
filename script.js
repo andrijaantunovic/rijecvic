@@ -181,9 +181,11 @@ class Game {
         if (!this.running) return
 
         this.draft.forEach(d => d = '')
-        for (let c = 0; c < wordLength; c++) {
+        for (let c = 0; c < this.wordLength; c++) {
+            this.draft[c] = null
             setTile(this.currentRow, c, '')
         }
+        this.moveTo(0)
         this.saveGameStateToLocalStorage()
     }
 
